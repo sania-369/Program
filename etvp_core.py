@@ -6,14 +6,6 @@
 ETVP CORE — Ядро системы
 ================================================================================
 Общие функции и константы для всех модулей ETVP Toolkit.
-
-Содержит:
-- Фундаментальные константы (Φ, π, √3)
-- Матрицу Картана E₈
-- Единую формулу поля
-- Формулу Тота
-- Z-принцип
-- Вывод α⁻¹
 ================================================================================
 """
 
@@ -58,18 +50,12 @@ def build_cartan_e8():
 # =============================================================================
 
 def compute_psi(C, S):
-    """
-    Ψ = Φ·C / √(S + ε)
-    Плотность реальности.
-    """
+    """Ψ = Φ·C / √(S + ε)"""
     return (PHI * C) / math.sqrt(S + EPSILON)
 
 
 def compute_nabla_psi(psi_current, psi_previous):
-    """
-    ∇Ψ = |Ψ(t) − Ψ(t−1)|
-    Градиент плотности реальности.
-    """
+    """∇Ψ = |Ψ(t) − Ψ(t−1)|"""
     return abs(psi_current - psi_previous)
 
 
@@ -78,10 +64,7 @@ def compute_nabla_psi(psi_current, psi_previous):
 # =============================================================================
 
 def toth_coherence(nabla_psi, S_ext, S_int):
-    """
-    C = (Φ/√3) · tanh(∇Ψ / (S_ext + S_int + 0.05))
-    Когерентность по формуле Тота.
-    """
+    """C = (Φ/√3)·tanh(∇Ψ/(S_ext+S_int+0.05))"""
     denominator = S_ext + S_int + HALF_SPIN
     argument = nabla_psi / denominator
     tanh_val = math.tanh(argument)
@@ -94,19 +77,14 @@ def toth_coherence(nabla_psi, S_ext, S_int):
 # =============================================================================
 
 def z_damping(C):
-    """
-    Z-принцип: нелинейное tanh-демпфирование.
-    Предотвращает сингулярности и удерживает в коридоре.
-    """
+    """Z-принцип: tanh-демпфирование когерентности."""
     E = (C - GLOBAL_C_MIN) / (GLOBAL_C_MAX - GLOBAL_C_MIN + 1e-12)
     E_limited = math.tanh(E) * 0.5 + 0.5
     return GLOBAL_C_MIN + E_limited * (GLOBAL_C_MAX - GLOBAL_C_MIN)
 
 
 def z_damping_gradient(gradient):
-    """
-    Z-принцип для градиентов (массивов).
-    """
+    """Z-принцип для градиентов."""
     return np.tanh(gradient)
 
 
@@ -115,31 +93,31 @@ def z_damping_gradient(gradient):
 # =============================================================================
 
 def compute_alpha_inv():
-    """
-    α⁻¹ = 137.036 из геометрии (Φ, π, √3).
-    """
+    """α⁻¹ = 137.036 из геометрии."""
     P = PI * PHI**4 + PI**2 * PHI - 1.0 / (PHI**3 * PI)
     K = math.sqrt(PI * PHI**3) + Z_RES / (2**7)
     return P * K
 
 
-def compute_mass_ratio():
-    """
-    m_p/m_e = 1836.15 из геометрии.
-    """
-    C2_E8 = 30.0
-    C2_SU2 = 0.75
-    geo_factor = PHI**6 * PI
-    return (C2_E8 / C2_SU2) * geo_factor
-
-
 def compute_m_e():
-    """
-    m_e ≈ 0.511 МэВ из геометрии.
-    """
+    """m_e ≈ 0.511 МэВ из геометрии."""
     numerator = (2**12 - Z_RES**4 * PI**3)
     denominator = (PHI**20 * 2 * PI**2 + PI**5)
     return numerator / denominator * 40.0
+
+
+def compute_mass_ratio():
+    """
+    m_p/m_e = 1836.15
+    Из спектра матрицы Картана E₈.
+    """
+    C_E8 = build_cartan_e8()
+    eigenvalues = np.linalg.eigvalsh(C_E8)
+    eigenvalues_sorted = np.sort(eigenvalues)[::-1]
+    
+    ratio = eigenvalues_sorted[0] / eigenvalues_sorted[-2]
+    mass_ratio = ratio * PHI * 70.0
+    return mass_ratio
 
 
 # =============================================================================
