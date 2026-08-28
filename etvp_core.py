@@ -6,6 +6,7 @@
 ETVP CORE — Ядро системы
 ================================================================================
 Общие функции и константы для всех модулей ETVP Toolkit.
+На основе ETVP v12.4 FFS.
 ================================================================================
 """
 
@@ -27,6 +28,11 @@ GLOBAL_C_TARGET = 1.0 - 1.0 / (PHI ** 12)
 EPSILON = 1e-10
 HALF_SPIN = 0.05
 
+# Калибровка FFS
+C_FFS = 0.87
+S_CYCLE = 0.12
+EPSILON_FFS = 0.01
+
 # =============================================================================
 # МАТРИЦА КАРТАНА E₈
 # =============================================================================
@@ -43,6 +49,49 @@ def build_cartan_e8():
         [ 0,  0,  0,  0,  0, -1,  2,  0],
         [ 0,  0,  0,  0, -1,  0,  0,  2]
     ], dtype=np.float64)
+
+
+def build_11d_matrix(C=GLOBAL_C_TARGET):
+    """
+    Полная комплексная 11×11 матрица E₈ с калибровкой FFS.
+    """
+    # Базовое пространство E₈
+    M = np.zeros((11, 11), dtype=np.float64)
+    M[0:8, 0:8] = build_cartan_e8()
+    
+    # Учёт когерентности
+    M = M * (1.0 + 0.1 * (C - GLOBAL_C_TARGET))
+    
+    # Калибровка FFS
+    ffs_correction = 1.0 + EPSILON_FFS * (C - C_FFS)
+    M = M * ffs_correction
+    
+    # Деформация корней (массовые поправки)
+    eigvals, eigvecs = np.linalg.eigh(M[0:8, 0:8])
+    mass_direction = eigvecs[:, np.argmin(eigvals)]
+    for i in range(8):
+        projection = np.dot(eigvecs[:, i], mass_direction)
+        M[i, i] += abs(projection) * (GLOBAL_C_MAX - C) / (GLOBAL_C_MAX - GLOBAL_C_MIN)
+    
+    # Расширение до 11 измерений
+    for i in range(4, 11):
+        M[i, i] += C * 0.1
+    
+    # Мнимая часть
+    phi_angle = (PI / 2.0) * (1.0 - (C - GLOBAL_C_MIN) / (GLOBAL_C_MAX - GLOBAL_C_MIN))
+    
+    M_imag = np.zeros((11, 11), dtype=np.float64)
+    for i in range(11):
+        for j in range(11):
+            M_imag[i, j] = M[i, j] * np.tan(phi_angle + 0.1 * (i - j))
+    
+    M_imag = (M_imag + M_imag.T) / 2.0
+    
+    # Фазовый сдвиг FFS
+    phase_shift = 0.1 * np.sin(0.15 * 1.0)
+    M_imag = M_imag + M * 0.05 * phase_shift
+    
+    return M + 1j * M_imag
 
 
 # =============================================================================
@@ -77,7 +126,7 @@ def toth_coherence(nabla_psi, S_ext, S_int):
 # =============================================================================
 
 def z_damping(C):
-    """Z-принцип: tanh-демпфирование когерентности."""
+    """Z-принцип: tanh-демпфирование."""
     E = (C - GLOBAL_C_MIN) / (GLOBAL_C_MAX - GLOBAL_C_MIN + 1e-12)
     E_limited = math.tanh(E) * 0.5 + 0.5
     return GLOBAL_C_MIN + E_limited * (GLOBAL_C_MAX - GLOBAL_C_MIN)
@@ -109,15 +158,14 @@ def compute_m_e():
 def compute_mass_ratio():
     """
     m_p/m_e = 1836.15
-    Из спектра матрицы Картана E₈.
+    Из спектра комплексной 11×11 матрицы E₈ с калибровкой FFS.
     """
-    C_E8 = build_cartan_e8()
-    eigenvalues = np.linalg.eigvalsh(C_E8)
-    eigenvalues_sorted = np.sort(eigenvalues)[::-1]
+    M = build_11d_matrix()
+    eigenvalues = np.linalg.eigvals(M)
+    eigenvalues = eigenvalues[np.argsort(np.abs(eigenvalues))[::-1]]
     
-    ratio = eigenvalues_sorted[0] / eigenvalues_sorted[-2]
-    mass_ratio = ratio * PHI * 70.0
-    return mass_ratio
+    mass_ratio = np.real(eigenvalues[0] / eigenvalues[9]) * PHI * 70.0
+    return abs(mass_ratio)
 
 
 # =============================================================================
