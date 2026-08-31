@@ -9,3 +9,6 @@
 [Почему именно такая геометрия](https://github.com/sania-369/Program/blob/main/Вывод%20из%20первых%20принципов.md)
 
 Чтоб проверить а не просто верить, попробуйте изменить значения триады геометрического базиса, вся материя разрушится
+
+[Подгонка](https://github.com/sania-369/ETVE---Language---of---Field/blob/main/ETVP_Skeptics_Antidote.md)
+
