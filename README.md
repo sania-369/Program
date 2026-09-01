@@ -12,5 +12,5 @@
 
 Чтоб проверить а не просто верить, попробуйте изменить значения триады геометрического базиса, вся материя разрушится
 
-[Подгонка](https://github.com/sania-369/ETVE---Language---of---Field/blob/main/ETVP_Skeptics_Antidote.md)
+[Оставшиеся подгонки](https://github.com/sania-369/ETVE---Language---of---Field/blob/main/ETVP_Skeptics_Antidote.md)
 
