@@ -22,4 +22,4 @@
 
 📃[Постулат](https://github.com/sania-369/Program/blob/main/POSTULATE.md)
 
-[Шум](https://github.com/sania-369/Program/blob/main/%D0%A8%D1%83%D0%BC.md) всегда должен быть.
+📃[Шум](https://github.com/sania-369/Program/blob/main/%D0%A8%D1%83%D0%BC.md) всегда должен быть.
