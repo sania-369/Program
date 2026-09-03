@@ -21,3 +21,5 @@
 ## 📃[Вывод](https://github.com/sania-369/Program/blob/main/%D0%92%D1%8B%D0%B2%D0%BE%D0%B4%20%D0%BE%20%D0%95%D0%A2%D0%92%D0%9F.md)
 
 📃[Постулат](https://github.com/sania-369/Program/blob/main/POSTULATE.md)
+
+[Шум](https://github.com/sania-369/Program/blob/main/%D0%A8%D1%83%D0%BC.md) всегда должен быть.
