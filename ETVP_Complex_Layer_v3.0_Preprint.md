@@ -4,7 +4,8 @@
 **Версия:** v3.0 (Сентябрь 2026)  
 **Связанная работа:** Unified Theory of Vortex Field (ETVE), Zenodo: 10.5281/zenodo.19305307  
 **Репозиторий:** [github.com/sania-369/New-Age-AI](https://github.com/sania-369/New-Age-AI)  
-**Лицензия:** [![License: CC BY 4.0](https://img.shields.io/badge/license-CC%20BY%204.0-6daa45?style=for-the-badge)](https://creativecommons.org/licenses/by/4.0/)  
+
+ [![License: CC BY 4.0](https://img.shields.io/badge/license-CC%20BY%204.0-6daa45?style=for-the-badge)](https://creativecommons.org/licenses/by/4.0/)  
 
 ---
 
