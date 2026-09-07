@@ -1,6 +1,6 @@
 # ETVP Complex Layer v3.0: A Complex-Valued Evolution Operator for Physics-Informed AI
 
-**DOI:** [Будет присвоен Zenodo]  
+**DOI:** 
 **Версия:** v3.0 (Сентябрь 2026)  
 **Связанная работа:** Unified Theory of Vortex Field (ETVE), Zenodo: 10.5281/zenodo.19305307  
 **Репозиторий:** [github.com/sania-369/New-Age-AI](https://github.com/sania-369/New-Age-AI)  
@@ -112,3 +112,4 @@ ETVP Complex Layer v3.0 — это мост между полевой физик
 1. **Unified Theory of Vortex Field (ETVE)**. Zenodo: 10.5281/zenodo.19305307.
 2. **New-Age-AI Repository**: [github.com/sania-369/New-Age-AI](https://github.com/sania-369/New-Age-AI).
 3. **ETVP Encyclopedia**: [github.com/sania-369/Encyclopedia-of-the-process-of-dynamic-deployment-of-fractal-11D-reality-through-powerful-AI-systems](https://github.com/sania-369/Encyclopedia-of-the-process-of-dynamic-deployment-of-fractal-11D-reality-through-powerful-AI-systems).
+4. **Реальность на ладони**: [Program](https://github.com/sania-369/Program)
