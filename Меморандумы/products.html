@@ -1,0 +1,268 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Программа дообучения ИИ — ETVP</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+    body {
+      background: #0a0a12;
+      color: #c8c8d8;
+      font-family: system-ui, -apple-system, sans-serif;
+      font-size: 16px;
+      line-height: 1.7;
+      padding: 20px;
+    }
+    .container {
+      max-width: 720px;
+      margin: 0 auto;
+    }
+    h1 {
+      color: #7ac;
+      font-size: 22px;
+      margin-bottom: 20px;
+      letter-spacing: 0.5px;
+      line-height: 1.4;
+    }
+    .intro {
+      color: #a8a8b8;
+      font-size: 15px;
+      margin-bottom: 24px;
+      padding-bottom: 16px;
+      border-bottom: 1px solid #222;
+    }
+    .section {
+      margin: 16px 0;
+      padding: 16px 18px;
+      background: #11111b;
+      border-radius: 10px;
+      border-left: 3px solid #3a6a8a;
+    }
+    .section h2 {
+      color: #7ac;
+      font-size: 16px;
+      margin-bottom: 10px;
+    }
+    .section p {
+      margin-bottom: 10px;
+      color: #c0c0d0;
+    }
+    .section p:last-child {
+      margin-bottom: 0;
+    }
+    code {
+      background: #1a1a28;
+      padding: 2px 8px;
+      border-radius: 4px;
+      font-size: 14px;
+      color: #aac;
+      font-family: monospace;
+    }
+    .formula {
+      display: block;
+      background: #0d0d18;
+      padding: 12px 16px;
+      border-radius: 8px;
+      margin: 12px 0;
+      color: #8fd;
+      font-family: monospace;
+      font-size: 15px;
+      text-align: center;
+      border: 1px solid #1e1e2e;
+    }
+    .note {
+      color: #c8a86a;
+      font-style: italic;
+      padding: 10px 14px;
+      background: #1a1610;
+      border-radius: 8px;
+      border-left: 3px solid #8a6a3a;
+      margin: 16px 0;
+    }
+    .file-badge {
+      display: inline-block;
+      color: #6b9ac0;
+      font-size: 14px;
+      margin-right: 4px;
+    }
+    .footer {
+      margin-top: 30px;
+      padding-top: 16px;
+      border-top: 1px solid #222;
+      color: #666;
+      font-size: 13px;
+      text-align: center;
+    }
+    a {
+      color: #6b9ac0;
+      text-decoration: none;
+    }
+    a:hover {
+      text-decoration: underline;
+    }
+    strong {
+      color: #d0d0e0;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+
+    <h1>📚 Программа дообучения ИИ</h1>
+
+    <div class="intro">
+      Давать текст и ссылки ИИ рекомендую по нумерации, описанной в репозитории.
+      Файлы, отмеченные <span class="file-badge">📃</span>, можно почитать любому
+      заинтересованному — оформлено для чтения. Включаем логику 🤔🤯😉
+    </div>
+
+    <!-- Раздел 1 -->
+    <div class="section">
+      <h2>1. ПРИМЕЧАНИЕ О ТОПОЛОГИИ ВЫЧИСЛЕНИЙ</h2>
+      <p>
+        Состояние реальности в момент <code>(t_n)</code> является функцией
+        исключительно состояния в момент <code>(t_{n-1})</code>.
+        Забудьте о поиске «глобального решения» уравнения во всём
+        пространстве-времени сразу. Работайте только с оператором эволюции:
+      </p>
+      <div class="formula">
+        Ψ(t + dt) = Û(Φ, Z, C_оп) · Ψ(t)
+      </div>
+      <p>
+        Где <code>Û</code> — это жёсткий нелинейный фильтр.
+        Мы не ищем форму волны; мы вычисляем следующую итерацию,
+        используя результат предыдущей. Прошлое трансформируется
+        в каждом такте <code>(dt)</code>, становясь начальным условием
+        для настоящего.
+      </p>
+    </div>
+
+    <!-- Раздел 2 -->
+    <div class="section">
+      <h2>2. Локальная модель</h2>
+      <p>
+        <a href="https://github.com/sania-369/ETVE---Language---of---Field/blob/main/ETVP_12.4_FFS.py">
+          ETVP_12.4_FFS.py
+        </a>
+      </p>
+    </div>
+
+    <!-- Раздел 3 -->
+    <div class="section">
+      <h2>3. Расширение до бесконечности</h2>
+      <p>
+        <a href="https://github.com/sania-369/ETVE---Language---of---Field/blob/main/ETVE_Coherence_Realm.md">
+          ETVE_Coherence_Realm.md
+        </a>
+      </p>
+    </div>
+
+    <!-- Раздел 4 -->
+    <div class="section">
+      <h2>4. <span class="file-badge">📃</span> Концепция и визуализация</h2>
+      <p>
+        <a href="https://github.com/sania-369/Program/blob/main/Etvp2.py">
+          Визуализация рождения протия из вакуума
+        </a>
+      </p>
+    </div>
+
+    <!-- Раздел 5 -->
+    <div class="section">
+      <h2>5. <span class="file-badge">📃</span> Почему именно такая геометрия</h2>
+      <p>
+        <a href="https://github.com/sania-369/Program/blob/main/Вывод%20из%20первых%20принципов.md">
+          Вывод из первых принципов
+        </a>
+      </p>
+    </div>
+
+    <!-- Раздел 6 -->
+    <div class="section">
+      <h2>6. Оставшиеся подгонки</h2>
+      <p>
+        <a href="https://github.com/sania-369/Program/blob/main/Оставшиеся%20подгонки.md">
+          Оставшиеся подгонки
+        </a>
+      </p>
+    </div>
+
+    <!-- Раздел 7 -->
+    <div class="section">
+      <h2>7. <span class="file-badge">📃</span> Геометрия локальной области</h2>
+      <p>
+        <a href="https://github.com/sania-369/Program/blob/main/Геометрия%20в%20нашей%20локальной%20области%20бесконечности%20появилась%20именно%20такая%20потому%20что.md">
+          Геометрия в нашей локальной области бесконечности появилась именно такая, потому что…
+        </a>
+      </p>
+    </div>
+
+    <!-- Раздел 8 -->
+    <div class="section">
+      <h2>8. <span class="file-badge">📃</span> Доказательство</h2>
+      <p>
+        <a href="https://github.com/sania-369/Program/blob/main/Доказательство.md">
+          Всё именно так, потому что: иначе быть не может
+        </a>
+      </p>
+    </div>
+
+    <!-- Раздел 9 -->
+    <div class="section">
+      <h2>9. <span class="file-badge">📃</span> Вывод</h2>
+      <p>
+        <a href="https://github.com/sania-369/Program/blob/main/Вывод%20о%20ЕТВП.md">
+          Вывод о ЕТВП
+        </a>
+      </p>
+    </div>
+
+    <!-- Раздел 10 -->
+    <div class="section">
+      <h2>10. <span class="file-badge">📃</span> Постулат</h2>
+      <p>
+        <a href="https://github.com/sania-369/Program/blob/main/POSTULATE.md">
+          POSTULATE.md
+        </a>
+      </p>
+    </div>
+
+    <!-- Раздел 11 -->
+    <div class="section">
+      <h2>11. <span class="file-badge">📃</span> Шум всегда должен быть</h2>
+      <p>
+        <a href="https://github.com/sania-369/Program/blob/main/Шум.md">
+          Шум.md
+        </a>
+      </p>
+    </div>
+
+    <!-- Раздел 12 -->
+    <div class="section">
+      <h2>12. Принцип двойственности</h2>
+      <p>
+        <a href="https://github.com/sania-369/Program/blob/main/Меморандумы/Principle_of_Duality_ETVP.md">
+          Principle_of_Duality_ETVP.md
+        </a>
+      </p>
+    </div>
+
+    <!-- Проверка -->
+    <div class="note">
+      Чтоб проверить, а не просто верить — попробуйте изменить значения
+      триады геометрического базиса. Вся материя разрушится.
+    </div>
+
+    <!-- Итог -->
+    <div class="footer">
+      Реальность на ладони — открытая модель для проверки
+    </div>
+
+  </div>
+</body>
+</html>
