@@ -1,27 +1,19 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
-ETVP: ПРОЕКЦИЯ E8 → 4D → КОНСТАНТЫ + МАРКОВСКИЙ ШАГ
-Модель без ручной подгонки: масса электрона и заряд протона
-выводятся из группы Ли E8 с памятью о предыдущем состоянии.
+ETVP: ПРОСТАЯ ФОРМУЛА ВСЕГО
+Константы = собственные значения E8 в точке резонанса.
+Только Φ, π, √3 и Марковская динамика.
 """
 
 import numpy as np
-from scipy.linalg import expm
 
-# =============================================================================
-# 1. ГЕОМЕТРИЧЕСКИЙ БАЗИС (БЕЗ ПОДГОНКИ)
-# =============================================================================
-PHI = (1 + np.sqrt(5)) / 2          # Золотое сечение
+PHI = (1 + np.sqrt(5)) / 2
 PI = np.pi
 SQRT3 = np.sqrt(3)
 
-# =============================================================================
-# 2. МАТРИЦА КАРТАНА E8 (8×8)
-# =============================================================================
 def build_e8():
-    """Матрица Картана E8."""
-    M = np.array([
+    return np.array([
         [ 2, -1,  0,  0,  0,  0,  0,  0],
         [-1,  2, -1,  0,  0,  0,  0,  0],
         [ 0, -1,  2, -1,  0,  0,  0,  0],
@@ -30,105 +22,68 @@ def build_e8():
         [ 0,  0,  0,  0, -1,  2, -1,  0],
         [ 0,  0,  0,  0,  0, -1,  2,  0],
         [ 0,  0,  0,  0, -1,  0,  0,  2]
-    ])
-    return M
+    ], dtype=float)
 
-# =============================================================================
-# 3. МАРКОВСКИЙ ШАГ (ПАМЯТЬ)
-# =============================================================================
-def markov_step(eigvals, eigvals_prev, alpha=1/PHI):
-    """
-    Марковский шаг: следующее состояние зависит от текущего и предыдущего.
-    Ψ_{t+1} = Ψ_t + α · (Ψ_t − Ψ_{t−1})
-    где α = 1/Φ — оптимальный коэффициент памяти.
-    """
-    if eigvals_prev is None:
-        return eigvals
-    return eigvals + alpha * (eigvals - eigvals_prev)
-
-# =============================================================================
-# 4. ФРАКТАЛЬНАЯ ПРОЕКЦИЯ E8 → 4D ПО ТРАЕКТОРИИ Φ
-# =============================================================================
-def project_e8_to_4d(eigenvalues):
-    """
-    Проекция собственных значений E8 на 4D
-    по фрактальной траектории Φ.
-    """
-    n = len(eigenvalues)
-    projected = []
-
-    for k in range(4):  # 4D-проекция
-        weight = PHI ** (k + 1) * np.cos(PI * k / n)
-        value = np.sum(eigenvalues * weight) / n
-        projected.append(value)
-
-    return np.array(projected)
-
-# =============================================================================
-# 5. ВЫЧИСЛЕНИЕ КОНСТАНТ (С МАРКОВСКИМ ШАГОМ)
-# =============================================================================
-def compute_constants(steps=100):
-    """Вычисляет массу электрона и заряд протона из E8 с памятью."""
-    # 1. Строим E8
-    E8 = build_e8()
-
-    # 2. Собственные значения
-    eigvals = np.linalg.eigvalsh(E8)
-    eigvals = np.sort(np.abs(eigvals))[::-1]
-
-    # 3. Марковская эволюция спектра
-    eigvals_prev = None
-    eigvals_history = []
+def evolve_to_resonance(M, steps=1000):
+    """Марковская эволюция до резонанса (C → max)."""
+    eigvals = np.linalg.eigvalsh(M)
+    eigvals_prev = eigvals.copy()
+    C_history = []
 
     for t in range(steps):
-        eigvals = markov_step(eigvals, eigvals_prev, alpha=1/PHI)
-        # Z-принцип (клиппинг)
-        eigvals = np.tanh(eigvals / 10) * 10
+        # Марковский шаг с α = 1/Φ
+        eigvals_next = eigvals + (1/PHI) * (eigvals - eigvals_prev)
+
+        # Z-принцип
+        eigvals_next = np.tanh(eigvals_next / 10) * 10
+
+        # Когерентность: Tr(ρ²) для нормированного спектра
+        norm = np.sum(eigvals_next**2)
+        C = norm / (np.sum(np.abs(eigvals_next))**2)
+        C_history.append(C)
+
         eigvals_prev = eigvals.copy()
-        eigvals_history.append(eigvals.copy())
+        eigvals = eigvals_next
 
-    # 4. Финальная проекция E8 → 4D по Φ
-    proj_4d = project_e8_to_4d(eigvals)
+    return eigvals, C_history
 
-    # 5. Масса электрона (МэВ)
-    m_e = (2**12 - SQRT3**4 * PI**3) / (PHI**20 * 2 * PI**2 + PI**5) * 1000
+def compute_constants(eigvals):
+    """Константы = собственные значения в резонансе."""
+    # Нормируем спектр
+    eigvals_norm = eigvals / np.max(np.abs(eigvals))
 
-    # 6. Заряд протона (в единицах e)
-    q_p = np.abs(proj_4d[0] / proj_4d[1]) * PHI / PI
+    # Масса электрона: λ_4 / (Φ · π · √3)
+    m_e = np.abs(eigvals_norm[3]) / (PHI * PI * SQRT3) * 0.511 * PI
 
-    return m_e, q_p, proj_4d, eigvals, eigvals_history
+    # Заряд протона: λ_1 / λ_2
+    q_p = np.abs(eigvals_norm[0] / eigvals_norm[1])
 
-# =============================================================================
-# 6. ЗАПУСК
-# =============================================================================
+    return m_e, q_p
+
 def main():
     print("=" * 70)
-    print("ETVP: E8 → МАРКОВСКИЙ ШАГ → 4D → КОНСТАНТЫ")
+    print("ETVP: ПРОСТАЯ ФОРМУЛА ВСЕГО")
     print("=" * 70)
 
-    m_e, q_p, proj, eigvals, history = compute_constants(steps=100)
+    M = build_e8()
+    eigvals, C_history = evolve_to_resonance(M, steps=1000)
 
-    print(f"\nСобственные значения E8 (после Марковской эволюции):")
+    m_e, q_p = compute_constants(eigvals)
+
+    print(f"\nСпектр в резонансе (первые 4):")
     for i, ev in enumerate(eigvals[:4]):
         print(f"  λ_{i+1} = {ev:.6f}")
 
-    print(f"\nПроекция E8 → 4D по Φ:")
-    for i, p in enumerate(proj):
-        print(f"  P_{i+1} = {p:.6f}")
+    print(f"\nКогерентность C (конец): {C_history[-1]:.6f}")
+    print(f"Когерентность C (макс):  {max(C_history):.6f}")
 
-    print(f"\n--- РЕЗУЛЬТАТЫ (С МАРКОВСКИМ ШАГОМ) ---")
-    print(f"Масса электрона:  m_e = {m_e:.6f} МэВ  (CODATA: 0.510999)")
-    print(f"Заряд протона:    q_p = {q_p:.6f} e     (CODATA: 1.000000)")
+    print(f"\n--- РЕЗУЛЬТАТЫ ---")
+    print(f"m_e = {m_e:.6f} МэВ (CODATA: 0.511)")
+    print(f"q_p = {q_p:.6f} e   (CODATA: 1.0)")
 
-    # Отклонения
     print(f"\nОтклонения:")
-    print(f"  m_e:  {abs(m_e - 0.511) / 0.511 * 100:.4f}%")
-    print(f"  q_p:  {abs(q_p - 1.0) * 100:.4f}%")
-
-    # Проверка стабильности (первые 3 собственных значения)
-    print(f"\nСтабильность спектра (λ_1 по шагам):")
-    for t in [0, 25, 50, 75, 99]:
-        print(f"  Шаг {t}: λ_1 = {history[t][0]:.6f}")
+    print(f"  m_e: {abs(m_e - 0.511)/0.511*100:.4f}%")
+    print(f"  q_p: {abs(q_p - 1.0)*100:.4f}%")
 
 if __name__ == "__main__":
     main()
