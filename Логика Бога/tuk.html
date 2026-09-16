@@ -87,7 +87,7 @@
       const osc = audioCtx.createOscillator();
       const gain = audioCtx.createGain();
 
-      osc.frequency.value = 880; // тон
+      osc.frequency.value = 880;
       osc.type = 'sine';
 
       gain.gain.setValueAtTime(0.3, audioCtx.currentTime);
@@ -99,7 +99,6 @@
       osc.start();
       osc.stop(audioCtx.currentTime + 0.15);
 
-      // Визуальный отклик
       tickEl.classList.add('active');
       setTimeout(() => tickEl.classList.remove('active'), 200);
 
@@ -116,7 +115,7 @@
       if (running) return;
       running = true;
       initAudio();
-      playTick(); // первый тук сразу
+      playTick();
 
       intervalId = setInterval(() => {
         playTick();
