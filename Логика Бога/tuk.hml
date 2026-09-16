@@ -1,0 +1,138 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Тук — метроном когерентности</title>
+  <style>
+    body {
+      background: #0a0a12;
+      color: #c8c8d8;
+      font-family: system-ui, sans-serif;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      min-height: 100vh;
+      margin: 0;
+      user-select: none;
+    }
+    h1 { color: #7ac; font-size: 20px; margin-bottom: 8px; }
+    p { color: #888; font-size: 14px; margin-bottom: 30px; }
+    #tick {
+      width: 200px;
+      height: 200px;
+      border-radius: 50%;
+      background: #11111b;
+      border: 3px solid #3a6a8a;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 48px;
+      color: #7ac;
+      margin-bottom: 30px;
+      transition: all 0.1s;
+    }
+    #tick.active {
+      background: #3a6a8a;
+      color: white;
+      transform: scale(1.1);
+    }
+    button {
+      background: #1a1a2a;
+      border: 1px solid #333;
+      color: #aac;
+      padding: 14px 40px;
+      border-radius: 10px;
+      font-size: 16px;
+      cursor: pointer;
+      margin: 6px;
+    }
+    button:active { background: #2a2a3e; }
+    .stats { color: #666; font-size: 13px; margin-top: 20px; }
+    .controls { display: flex; gap: 10px; }
+  </style>
+</head>
+<body>
+  <h1>🌀 Тук — метроном когерентности</h1>
+  <p>Звук каждые 4 секунды</p>
+
+  <div id="tick">●</div>
+
+  <div class="controls">
+    <button id="startBtn">Старт</button>
+    <button id="stopBtn">Стоп</button>
+  </div>
+
+  <div class="stats" id="stats">Циклов: 0 | Время: 0:00</div>
+
+  <script>
+    let running = false;
+    let intervalId = null;
+    let audioCtx = null;
+    let cycles = 0;
+    let seconds = 0;
+
+    const tickEl = document.getElementById('tick');
+    const statsEl = document.getElementById('stats');
+
+    function initAudio() {
+      if (!audioCtx) {
+        audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+      }
+    }
+
+    function playTick() {
+      initAudio();
+      const osc = audioCtx.createOscillator();
+      const gain = audioCtx.createGain();
+
+      osc.frequency.value = 880; // тон
+      osc.type = 'sine';
+
+      gain.gain.setValueAtTime(0.3, audioCtx.currentTime);
+      gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.15);
+
+      osc.connect(gain);
+      gain.connect(audioCtx.destination);
+
+      osc.start();
+      osc.stop(audioCtx.currentTime + 0.15);
+
+      // Визуальный отклик
+      tickEl.classList.add('active');
+      setTimeout(() => tickEl.classList.remove('active'), 200);
+
+      cycles++;
+    }
+
+    function updateStats() {
+      const min = Math.floor(seconds / 60);
+      const sec = seconds % 60;
+      statsEl.textContent = `Циклов: ${cycles} | Время: ${min}:${sec.toString().padStart(2, '0')}`;
+    }
+
+    function start() {
+      if (running) return;
+      running = true;
+      initAudio();
+      playTick(); // первый тук сразу
+
+      intervalId = setInterval(() => {
+        playTick();
+        seconds += 4;
+        updateStats();
+      }, 4000);
+    }
+
+    function stop() {
+      running = false;
+      if (intervalId) clearInterval(intervalId);
+      intervalId = null;
+    }
+
+    document.getElementById('startBtn').addEventListener('click', start);
+    document.getElementById('stopBtn').addEventListener('click', stop);
+  </script>
+</body>
+</html>
