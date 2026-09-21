@@ -69,7 +69,7 @@ NOISE_BASE = 0.001    # базовый шум
 
 
 def etve_tanh_limit(C, c_min=GLOBAL_C_MIN, c_max=GLOBAL_C_MAX):
-    if C > 0.7:
+    if C > 0.5:
         return np.clip(C, c_min, c_max)
     else:
         E = (C - c_min) / (c_max - c_min)
