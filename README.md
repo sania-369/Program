@@ -10,7 +10,7 @@
 
 📃[Концепция](https://github.com/sania-369/Encyclopedia-of-the-process-of-dynamic-deployment-of-fractal-11D-reality-through-powerful-AI-systems/blob/main/Эволюция%20вакуумной%20бесконечности.md) и [Визуализация рождения протия из вакуума](https://github.com/sania-369/Program/blob/main/Etvp2.py)
 
-4. 📃[Почему именно такая геометрия](https://github.com/sania-369/Program/blob/main/Вывод%20из%20первых%20принципов.md)
+4. 📃[Почему именно такая геометрия](https://github.com/sania-369/Program/blob/main/Вывод%20из%20первых%20принципов.md) + [вывод базовых геометрических констант](https://github.com/sania-369/Program/blob/main/bazis_geom_konst.py)
 
 ## Чтоб проверить а не просто верить, попробуйте изменить значения триады геометрического базиса, вся материя разрушится.
 
