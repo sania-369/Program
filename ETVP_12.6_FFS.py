@@ -69,6 +69,11 @@ NOISE_BASE = 0.001    # базовый шум
 
 
 def etve_tanh_limit(C, c_min=GLOBAL_C_MIN, c_max=GLOBAL_C_MAX):
+    """
+    Гибрид:
+    - C > 0.99 — clip (низкая плотность: космос, наш режим)
+    - C < 0.99 — tanh (высокая плотность: ЧД, супер стресс)
+    """
     if C > 0.5:
         return np.clip(C, c_min, c_max)
     else:
