@@ -64,29 +64,33 @@ NOISE_S = 0.01
 NOISE_BASE = 0.001
 
 
-def etve_tanh_limit(C, S, c_min=GLOBAL_C_MIN, c_max=GLOBAL_C_MAX):
+def clitanh(C, S, C_target, c_min=GLOBAL_C_MIN, c_max=GLOBAL_C_MAX):
     """
-    Эволюционный лимит ЕТВП.
-
-    При S <= S_cycle — чистый clip (наш режим).
-    При S > S_cycle — плавный переход к tanh (ЧД, супер-стресс).
-
-    Никаких жёстких if-else по C — только blend по S.
+    Адаптивное удержание clitanh.
+    
+    При S <= S_cycle:
+        - clip к [c_min, c_max] — без искажений.
+    При S > S_cycle:
+        - tanh применяется к ОТКЛОНЕНИЮ от C_target, не к C.
+        - Это убирает накопление сдвига.
     """
-    # 1. Линейный режим (низкая плотность вакуума)
+    # 1. clip
     c_clipped = np.clip(C, c_min, c_max)
-
-    # 2. Нелинейный режим (сверхплотность)
-    E = (C - c_min) / (c_max - c_min + 1e-12)
-    c_tanh = c_min + (np.tanh(E * 2.0) * 0.5 + 0.5) * (c_max - c_min)
-
-    # 3. Вес блендинга
+    
+    # 2. Адаптивный вес
     if S <= S_cycle:
-        blend_weight = 0.0
+        w = 0.0
     else:
-        blend_weight = np.tanh((S - S_cycle) * 5.0)
-
-    return (1.0 - blend_weight) * c_clipped + blend_weight * c_tanh
+        w = 1.0 - np.exp(-(S - S_cycle) * 10.0)
+    
+    # 3. tanh применяется к отклонению от цели
+    deviation = c_clipped - C_target
+    # Нормализуем отклонение
+    dev_norm = deviation / (c_max - c_min)
+    # tanh сжимает большое отклонение
+    dev_compressed = np.tanh(dev_norm * 3.0) / 3.0 * (c_max - c_min)
+    
+    return c_clipped - w * (deviation - dev_compressed)
 
 
 # =============================================================================
