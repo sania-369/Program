@@ -69,12 +69,15 @@ NOISE_BASE = 0.001    # базовый шум
 
 
 def etve_tanh_limit(C, c_min=GLOBAL_C_MIN, c_max=GLOBAL_C_MAX):
-    """
-    Z-принцип: жёсткое ограничение без искажений.
-    При C в [c_min, c_max] — возвращает C как есть.
-    Только при выходе за пределы — обрезает.
-    """
-    return np.clip(C, c_min, c_max)
+    # Безопасные границы
+    soft_min = c_min + 0.01 * (c_max - c_min)
+    soft_max = c_max - 0.01 * (c_max - c_min)
+    if soft_min < C < soft_max:
+        return C  # в середине — без искажений
+    # У границ — tanh
+    E = (C - c_min) / (c_max - c_min)
+    E_limited = np.tanh(E) * 0.5 + 0.5
+    return c_min + E_limited * (c_max - c_min)
 
 
 # =============================================================================
