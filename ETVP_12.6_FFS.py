@@ -73,34 +73,13 @@ CLITANH_A = 3.0     # степень сжатия отклонения
 # 1. АДАПТИВНОЕ УДЕРЖАНИЕ CLITANH
 # =============================================================================
 
-def clitanh(C, S, C_target=C_FFS,
-            c_min=GLOBAL_C_MIN, c_max=GLOBAL_C_MAX,
-            k=CLITANH_K, a=CLITANH_A):
+def etve_tanh_limit(C, c_min=GLOBAL_C_MIN, c_max=GLOBAL_C_MAX):
     """
-    Адаптивное удержание clitanh.
-
-    При S <= S_cycle:
-        w = 0 -> чистый clip. Без искажений.
-    При S > S_cycle:
-        w -> 1 плавно. tanh применяется к ОТКЛОНЕНИЮ от C_target.
-        Это убирает накопление сдвига: при C = C_target tanh ничего не делает.
+    Z-принцип: жёсткое ограничение без искажений.
+    При C в [c_min, c_max] — возвращает C как есть.
+    Только при выходе за пределы — обрезает.
     """
-    # 1. Жёсткий clip
-    c_clipped = np.clip(C, c_min, c_max)
-
-    # 2. Адаптивный вес
-    if S <= S_cycle:
-        w = 0.0
-    else:
-        w = 1.0 - np.exp(-(S - S_cycle) * k)
-
-    # 3. tanh к отклонению от цели (нормированному)
-    deviation = c_clipped - C_target
-    dev_norm = deviation / (c_max - c_min + 1e-12)
-    dev_compressed = np.tanh(dev_norm * a) / a * (c_max - c_min)
-
-    # 4. Смесь: только если отклонение есть
-    return c_clipped - w * (deviation - dev_compressed)
+    return np.clip(C, c_min, c_max)
 
 
 # =============================================================================
