@@ -69,14 +69,12 @@ NOISE_BASE = 0.001    # базовый шум
 
 
 def etve_tanh_limit(C, c_min=GLOBAL_C_MIN, c_max=GLOBAL_C_MAX):
-    """Единый нелинейный демпфер против сингулярностей (Z-Принцип)."""
-    epsilon = 1e-12
-    E = (C - c_min) / (c_max - c_min + epsilon)
-    if isinstance(C, (int, float)):
-        E_limited = math.tanh(E) * 0.5 + 0.5
-    else:
-        E_limited = np.tanh(E) * 0.5 + 0.5
-    return c_min + E_limited * (c_max - c_min)
+    """
+    Z-принцип: жёсткое ограничение без искажений.
+    При C в [c_min, c_max] — возвращает C как есть.
+    Только при выходе за пределы — обрезает.
+    """
+    return np.clip(C, c_min, c_max)
 
 
 # =============================================================================
