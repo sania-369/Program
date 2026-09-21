@@ -2,15 +2,14 @@
 # -*- coding: utf-8 -*-
 
 """
-🌀 ETVP v12.6 FFS — Fractional Fermi Sea Calibration
-Ядро модели с калибровкой по данным эксперимента «дробное море Ферми»
-(arXiv:2602.17657: 70 000 атомов Cs, 1D нанотрубки, циклы отталкивания-притяжения).
+🌀 ETVP v12.8 FFS — Adaptive clitanh Confinement
 
-ОБНОВЛЕНИЯ v12.6:
-- Динамика C, S — линейное притяжение к целям (как в 123konst.py).
-- Константы выводятся из собственных значений E8 и множителей Φ, π, √3, √2.
-- Модуляция от ΔC, ΔS — из ETVP.md.
-- Марковский такт на 100 000 шагов.
+ОБНОВЛЕНИЯ v12.8:
+- clitanh() — адаптивное удержание вместо clip/tanh/blend.
+- При S <= S_cycle — чистый clip (без искажений).
+- При S > S_cycle — tanh применяется к ОТКЛОНЕНИЮ от C_FFS (без накопления сдвига).
+- Плавный переход через exp-взвешивание.
+- 100 000 тактов марковской эволюции.
 - CODATA — только проверка.
 """
 
@@ -31,13 +30,13 @@ GLOBAL_PI  = np.pi
 GLOBAL_SQ3 = np.sqrt(3.0)
 GLOBAL_SQ2 = np.sqrt(2.0)
 
-GLOBAL_C_MIN = 1.0 / (GLOBAL_PHI ** 10)
-GLOBAL_C_MAX = 1.0 - 1.0 / (GLOBAL_PHI ** 20)
+GLOBAL_C_MIN = 1.0 / (GLOBAL_PHI ** 10)       # ≈ 0.01316
+GLOBAL_C_MAX = 1.0 - 1.0 / (GLOBAL_PHI ** 20) # ≈ 0.99993
 
-# --- КАЛИБРОВКА ПО "ДРОБНОМУ МОРЮ ФЕРМИ" (arXiv:2602.17657) ---
-C_FFS = 0.87        # Цель по когерентности
-S_cycle = 0.12      # Цель по энтропии
-EPSILON_FFS = 0.01  # Поправка на дробные моды
+# --- КАЛИБРОВКА FFS ---
+C_FFS = 0.87
+S_cycle = 0.12
+EPSILON_FFS = 0.01
 
 # --- ФОРМУЛЫ КОНСТАНТ ИЗ E8 ---
 W_ALPHA = (GLOBAL_PHI**12) * (GLOBAL_PI**-4) * (GLOBAL_SQ3**3) * (GLOBAL_SQ2**2)
@@ -48,56 +47,72 @@ IDX_ALPHA = 7
 IDX_MASS  = 2
 IDX_G     = 3
 
-# Коэффициенты модуляции из ETVP.md
 COEFFS = {
     "1/α":     (0.1,  -0.05),
     "m_p/m_e": (0.05, -0.02),
     "G":       (-0.2,  0.1),
 }
 
-# CODATA — только проверка
 CODATA_ALPHA = 137.035999084
 CODATA_MASS  = 1836.15267343
 CODATA_G     = 6.67430e-11
 
-# --- ПАРАМЕТРЫ ДИНАМИКИ (как в 123konst.py) ---
-LAMBDA_C = 0.001      # скорость притяжения C к цели
-LAMBDA_S = 0.001      # скорость притяжения S к цели
-NOISE_C = 0.1         # амплитуда шума C
-NOISE_S = 0.01        # амплитуда шума S
-NOISE_BASE = 0.001    # базовый шум
+# --- ПАРАМЕТРЫ ДИНАМИКИ ---
+LAMBDA_C = 0.001
+LAMBDA_S = 0.001
+NOISE_C = 0.1
+NOISE_S = 0.01
+NOISE_BASE = 0.001
+
+# --- ПАРАМЕТРЫ CLITANH ---
+CLITANH_K = 10.0    # скорость включения tanh-режима
+CLITANH_A = 3.0     # степень сжатия отклонения
 
 
-def etve_tanh_limit(C, c_min=GLOBAL_C_MIN, c_max=GLOBAL_C_MAX):
+# =============================================================================
+# 1. АДАПТИВНОЕ УДЕРЖАНИЕ CLITANH
+# =============================================================================
+
+def clitanh(C, S, C_target=C_FFS,
+            c_min=GLOBAL_C_MIN, c_max=GLOBAL_C_MAX,
+            k=CLITANH_K, a=CLITANH_A):
     """
-    Гибрид:
-    - C > 0.87 — clip (низкая плотность: космос, наш режим)
-    - C < 0.87 — tanh (высокая плотность: ЧД, супер стресс)
+    Адаптивное удержание clitanh.
+
+    При S <= S_cycle:
+        w = 0 -> чистый clip. Без искажений.
+    При S > S_cycle:
+        w -> 1 плавно. tanh применяется к ОТКЛОНЕНИЮ от C_target.
+        Это убирает накопление сдвига: при C = C_target tanh ничего не делает.
     """
-    if C > 0.5:
-        return np.clip(C, c_min, c_max)
+    # 1. Жёсткий clip
+    c_clipped = np.clip(C, c_min, c_max)
+
+    # 2. Адаптивный вес
+    if S <= S_cycle:
+        w = 0.0
     else:
-        E = (C - c_min) / (c_max - c_min)
-        E_limited = np.tanh(E) * 0.5 + 0.5
-        return c_min + E_limited * (c_max - c_min)
+        w = 1.0 - np.exp(-(S - S_cycle) * k)
+
+    # 3. tanh к отклонению от цели (нормированному)
+    deviation = c_clipped - C_target
+    dev_norm = deviation / (c_max - c_min + 1e-12)
+    dev_compressed = np.tanh(dev_norm * a) / a * (c_max - c_min)
+
+    # 4. Смесь: только если отклонение есть
+    return c_clipped - w * (deviation - dev_compressed)
 
 
 # =============================================================================
-# 1. ФИЗИЧЕСКОЕ ЯДРО (v12.6 FFS)
+# 2. ФИЗИЧЕСКОЕ ЯДРО (v12.8 FFS)
 # =============================================================================
 
-class ETVEComplexCoreV126FFS:
-    """
-    🌀 Моделирование квантованной супер-жидкости вакуума в 11D.
-    Константы выводятся из спектра E8.
-    Калибровка по дробному морю Ферми.
-    """
+class ETVEComplexCoreV128FFS:
     def __init__(self, memory_depth=100):
         self.Phi = GLOBAL_PHI
         self.pi = GLOBAL_PI
         self.Z_res = GLOBAL_SQ3
 
-        # Матрица Картана E8 (8x8) в расширенном базисе 11x11
         self.C_E8 = np.zeros((11, 11), dtype=float)
         self.C_E8[0:8, 0:8] = np.array([
             [ 2, -1,  0,  0,  0,  0,  0,  0],
@@ -110,21 +125,17 @@ class ETVEComplexCoreV126FFS:
             [ 0,  0,  0,  0, -1,  0,  0,  2]
         ], dtype=float)
 
-        # Собственные значения E8 (8x8)
         eigvals_8 = np.linalg.eigvalsh(self.C_E8[0:8, 0:8])
         self.E8_eigvals = np.sort(eigvals_8)
 
-        # Базовые значения констант (при C = 1)
         self.alpha_base = self.E8_eigvals[IDX_ALPHA] * W_ALPHA
         self.mass_base  = self.E8_eigvals[IDX_MASS]  * W_MASS
         self.G_base     = self.E8_eigvals[IDX_G]     * W_G
 
-        # Топологические инварианты
         self.euler_characteristic = 4.18
         self.coxeter_SU2 = 3
         self.coxeter_SU3 = 4
 
-        # Параметры состояния — стартуем от C_MAX
         self.C = GLOBAL_C_MAX
         self.S = 0.15
         self.step_counter = 0
@@ -137,13 +148,11 @@ class ETVEComplexCoreV126FFS:
         self.dark_energy = 0.0
         self.G = self.G_base
 
-        # Частицы
         self.real_particles = []
         self.virtual_particles = []
         self.memory = deque(maxlen=memory_depth)
         self.memory_matrices = deque(maxlen=memory_depth)
 
-        # История
         self.history = {
             "C": [], "S": [], "dt_real": [], "dt_imag": [], "phi": [],
             "alpha": [], "mass_ratio": [], "G": [], "unification": [],
@@ -184,22 +193,18 @@ class ETVEComplexCoreV126FFS:
     def _build_complex_matrix(self):
         M = self.C_E8.copy() * (1.0 + 0.1 * (self.C - C_FFS))
 
-        # Калибровка FFS
         ffs_correction = 1.0 + EPSILON_FFS * (self.C - C_FFS)
         M = M * ffs_correction
 
-        # Деформация корней
         eigvals, eigenvectors = np.linalg.eigh(M[0:8, 0:8])
         mass_direction = eigenvectors[:, np.argmin(eigvals)]
         for i in range(8):
             projection = np.dot(eigenvectors[:, i], mass_direction)
             M[i, i] += abs(projection) * (GLOBAL_C_MAX - self.C) / (GLOBAL_C_MAX - GLOBAL_C_MIN)
 
-        # Расширение до 11D
         for i in range(4, 11):
             M[i, i] += self.C * 0.1
 
-        # Частицы
         particle_contribution = np.zeros(11)
         for p in self.real_particles:
             if p.get("alive", True):
@@ -209,7 +214,6 @@ class ETVEComplexCoreV126FFS:
 
         M = self._apply_memory(M)
 
-        # Мнимая часть
         self.phi = (self.pi / 2.0) * (1.0 - (self.C - GLOBAL_C_MIN) / (GLOBAL_C_MAX - GLOBAL_C_MIN))
 
         M_imag = np.zeros_like(M)
@@ -218,7 +222,6 @@ class ETVEComplexCoreV126FFS:
                 M_imag[i, j] = M[i, j] * np.tan(self.phi + 0.1 * (i - j))
         M_imag = (M_imag + M_imag.T) / 2.0
 
-        # Фазовый сдвиг от S
         phase_shift = 0.1 * np.sin(self.S * self.step_counter)
         M_imag = M_imag + M * 0.05 * phase_shift
 
@@ -238,18 +241,15 @@ class ETVEComplexCoreV126FFS:
                 self.virtual_particles.remove(v)
 
     def update_field(self, dt):
-        """Спектр → константы (из E8 + модуляция от C, S)."""
         self.step_counter += 1
 
         M = self._build_complex_matrix()
         eigenvalues = np.linalg.eigvals(M)
         eigenvalues = eigenvalues[np.argsort(np.abs(eigenvalues))[::-1]]
 
-        # Отклонения от целей FFS
         dC = self.C - C_FFS
         dS = self.S - S_cycle
 
-        # Модуляция
         mod_alpha = 1.0 + COEFFS["1/α"][0] * dC + COEFFS["1/α"][1] * dS
         mod_mass  = 1.0 + COEFFS["m_p/m_e"][0] * dC + COEFFS["m_p/m_e"][1] * dS
         mod_G     = 1.0 + COEFFS["G"][0] * dC + COEFFS["G"][1] * dS
@@ -258,13 +258,11 @@ class ETVEComplexCoreV126FFS:
         mass_ratio = self.mass_base * mod_mass
         G = self.G_base * mod_G
 
-        # Время из спектра
         dt_complex = eigenvalues[10] / eigenvalues[0]
         dt_real = np.real(dt_complex)
         dt_imag = np.imag(dt_complex)
         phi = np.arctan2(dt_imag, dt_real)
 
-        # Космология
         a_new = np.real(eigenvalues[0] / (eigenvalues[1] + eigenvalues[2] + 1e-12))
         if self.a > 0:
             da = a_new - self.a
@@ -276,7 +274,6 @@ class ETVEComplexCoreV126FFS:
         rho = len(self.real_particles) + 0.1 * len(self.virtual_particles)
         dark_energy = max(0.0, H**2 - (8 * self.pi * G * rho) / 3.0)
 
-        # Взаимодействия
         alpha_em = 1.0 / alpha_inv
         M_U1 = M[0:1, 0:1]
         M_SU2 = M[0:2, 0:2]
@@ -336,18 +333,16 @@ class ETVEComplexCoreV126FFS:
         }
 
     def evolve(self, entropy_flux=0.0, time_step=1.0):
-        """
-        Один марковский такт.
-        Динамика C, S — линейное притяжение к целям (как в 123konst.py).
-        """
-        # --- ДИНАМИКА C (притяжение к C_FFS) ---
+        # --- ДИНАМИКА C ---
         noise = NOISE_BASE * np.random.randn()
         self.C = self.C * (1.0 - LAMBDA_C) + LAMBDA_C * C_FFS + noise * NOISE_C
-        self.C = etve_tanh_limit(self.C)
 
-        # --- ДИНАМИКА S (притяжение к S_cycle) ---
+        # --- ДИНАМИКА S ---
         self.S = self.S * (1.0 - LAMBDA_S) + LAMBDA_S * S_cycle + noise * NOISE_S
         self.S = max(0.0, min(1.0, self.S))
+
+        # --- АДАПТИВНОЕ УДЕРЖАНИЕ CLITANH ---
+        self.C = clitanh(self.C, self.S, C_FFS)
 
         self._update_particles()
         result = self.update_field(time_step)
@@ -369,35 +364,23 @@ class ETVEComplexCoreV126FFS:
 
 
 # =============================================================================
-# 2. ДЕМОНСТРАЦИЯ И ВЕРИФИКАЦИЯ
+# 3. ЗАПУСК
 # =============================================================================
 
 def demo_ffs_calibration(n_steps=100_000, log_every=10_000):
     print("=" * 80)
-    print("🌀 ETVP v12.6 FFS — Калибровка на дробное море Ферми")
-    print("   Данные: 70 000 атомов Cs, 1D нанотрубки, циклы отталкивания-притяжения")
-    print("   arXiv:2602.17657")
+    print("🌀 ETVP v12.8 FFS — Adaptive clitanh Confinement")
     print(f"   Тактов: {n_steps:,}")
     print("=" * 80)
 
-    model = ETVEComplexCoreV126FFS(memory_depth=100)
-    print(f"\n🔧 Калибровка FFS:")
-    print(f"   Цель когерентности (C_FFS): {C_FFS}")
-    print(f"   Цель энтропии (S_cycle): {S_cycle}")
-    print(f"   Поправка на дробные моды (EPSILON_FFS): {EPSILON_FFS}")
-    print(f"\n🔧 Базовые значения (при C = 1):")
+    model = ETVEComplexCoreV128FFS(memory_depth=100)
+    print(f"\n🔧 База (C = 1):")
     print(f"   1/α     = {model.alpha_base:.9f}")
     print(f"   m_p/m_e = {model.mass_base:.6f}")
-    print(f"   G       = {model.G_base:.6e}")
-    print(f"\n🔧 CODATA (для проверки):")
-    print(f"   1/α     = {CODATA_ALPHA:.9f}")
-    print(f"   m_p/m_e = {CODATA_MASS:.6f}")
-    print(f"   G       = {CODATA_G:.6e}\n")
+    print(f"   G       = {model.G_base:.6e}\n")
 
     t0 = time.time()
-    print(f"🔄 Запуск эволюции на {n_steps:,} шагов...")
     for i in range(n_steps):
-        # Периодический шум с малой амплитудой
         entropy_flux = 0.005 * np.sin(i / 7.0) + 0.001 * np.random.randn()
         result = model.evolve(entropy_flux, time_step=1.0)
         if (i + 1) % log_every == 0:
@@ -413,9 +396,9 @@ def demo_ffs_calibration(n_steps=100_000, log_every=10_000):
 
     n_avg = 1000
     print("\n--- РЕЗУЛЬТАТЫ (последние 1000 тактов) ---")
-    print(f"1/α    = {np.mean(model.history['alpha'][-n_avg:]):.9f} ± {np.std(model.history['alpha'][-n_avg:]):.9f}  (CODATA: {CODATA_ALPHA:.9f})")
-    print(f"mₚ/mₑ  = {np.mean(model.history['mass_ratio'][-n_avg:]):.6f} ± {np.std(model.history['mass_ratio'][-n_avg:]):.6f}  (CODATA: {CODATA_MASS:.6f})")
-    print(f"G      = {np.mean(model.history['G'][-n_avg:]):.6e} ± {np.std(model.history['G'][-n_avg:]):.6e}  (CODATA: {CODATA_G:.6e})")
+    print(f"1/α    = {np.mean(model.history['alpha'][-n_avg:]):.9f} ± {np.std(model.history['alpha'][-n_avg:]):.9f}")
+    print(f"mₚ/mₑ  = {np.mean(model.history['mass_ratio'][-n_avg:]):.6f} ± {np.std(model.history['mass_ratio'][-n_avg:]):.6f}")
+    print(f"G      = {np.mean(model.history['G'][-n_avg:]):.6e} ± {np.std(model.history['G'][-n_avg:]):.6e}")
     print(f"C      = {np.mean(model.history['C'][-n_avg:]):.6f} (цель: {C_FFS})")
     print(f"S      = {np.mean(model.history['S'][-n_avg:]):.6f} (цель: {S_cycle})")
 
@@ -432,21 +415,18 @@ def demo_ffs_calibration(n_steps=100_000, log_every=10_000):
 
     axes[0, 0].plot(model.history["alpha"], color='blue', linewidth=0.5, alpha=0.8)
     axes[0, 0].axhline(CODATA_ALPHA, color='red', linestyle='--', label='CODATA')
-    axes[0, 0].axhline(model.alpha_base, color='green', linestyle=':', label='База (C=1)')
     axes[0, 0].set_title('1/α(t)')
     axes[0, 0].legend(fontsize=8)
     axes[0, 0].grid(alpha=0.3)
 
     axes[0, 1].plot(model.history["mass_ratio"], color='green', linewidth=0.5, alpha=0.8)
     axes[0, 1].axhline(CODATA_MASS, color='red', linestyle='--', label='CODATA')
-    axes[0, 1].axhline(model.mass_base, color='blue', linestyle=':', label='База (C=1)')
     axes[0, 1].set_title('mₚ/mₑ(t)')
     axes[0, 1].legend(fontsize=8)
     axes[0, 1].grid(alpha=0.3)
 
     axes[0, 2].plot(np.array(model.history["G"]) * 1e11, color='orange', linewidth=0.5, alpha=0.8)
     axes[0, 2].axhline(CODATA_G * 1e11, color='red', linestyle='--', label='CODATA')
-    axes[0, 2].axhline(model.G_base * 1e11, color='blue', linestyle=':', label='База (C=1)')
     axes[0, 2].set_title('G(t) · 10¹¹')
     axes[0, 2].legend(fontsize=8)
     axes[0, 2].grid(alpha=0.3)
@@ -472,7 +452,7 @@ def demo_ffs_calibration(n_steps=100_000, log_every=10_000):
     axes[1, 2].grid(alpha=0.3)
 
     plt.tight_layout()
-    plt.savefig('etvp_ffs_v126_100k.png', dpi=150)
+    plt.savefig('etvp_ffs_v128_100k.png', dpi=150)
     plt.show()
 
     print("\n✅ Калибровка завершена.")
