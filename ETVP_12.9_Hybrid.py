@@ -68,18 +68,27 @@ NOISE_BASE = 0.001
 # =============================================================================
 
 def etve_tanh_limit(C, c_min=GLOBAL_C_MIN, c_max=GLOBAL_C_MAX,
-                    threshold=C_HYBRID_THRESHOLD):
+                    c_soft_low=0.87, c_soft_high=0.9):
     """
-    Гибрид:
-    - C > threshold — tanh (высокая плотность).
-    - C <= threshold — clip (низкая плотность).
+    Гибрид с мягким переключением:
+    - C <= c_soft_low  — чистый clip (низкая плотность).
+    - c_soft_low < C < c_soft_high — плавный переход (smoothstep).
+    - C >= c_soft_high — чистый tanh (высокая плотность).
     """
-    if C > threshold:
-        E = (C - c_min) / (c_max - c_min + 1e-12)
-        E_limited = np.tanh(E * 2.0) * 0.5 + 0.5
-        return c_min + E_limited * (c_max - c_min)
+    c_clip = np.clip(C, c_min, c_max)
+
+    E = (C - c_min) / (c_max - c_min + 1e-12)
+    c_tanh = c_min + (np.tanh(E * 2.0) * 0.5 + 0.5) * (c_max - c_min)
+
+    if C <= c_soft_low:
+        w = 0.0
+    elif C >= c_soft_high:
+        w = 1.0
     else:
-        return np.clip(C, c_min, c_max)
+        t = (C - c_soft_low) / (c_soft_high - c_soft_low)
+        w = t * t * (3.0 - 2.0 * t)  # smoothstep
+
+    return (1.0 - w) * c_clip + w * c_tanh
 
 
 # =============================================================================
