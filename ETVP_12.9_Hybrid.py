@@ -68,7 +68,7 @@ NOISE_BASE = 0.001
 # =============================================================================
 
 def etve_tanh_limit(C, c_min=GLOBAL_C_MIN, c_max=GLOBAL_C_MAX,
-                    c_soft_low=0.999, c_soft_high=1):
+                    c_soft_low=0.9999, c_soft_high=1):
     """
     Гибрид с мягким переключением:
     - C <= c_soft_low  — чистый clip (низкая плотность).
