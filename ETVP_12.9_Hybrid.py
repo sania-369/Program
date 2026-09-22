@@ -71,15 +71,15 @@ def etve_tanh_limit(C, c_min=GLOBAL_C_MIN, c_max=GLOBAL_C_MAX,
                     threshold=C_HYBRID_THRESHOLD):
     """
     Гибрид:
-    - C <= threshold — чистый clip (низкая плотность, ЧД).
-    - C > threshold — чистый tanh (высокая плотность, наш режим).
+    - C > threshold — tanh (высокая плотность).
+    - C <= threshold — clip (низкая плотность).
     """
-    if C <= threshold:
-        return np.clip(C, c_min, c_max)
-    else:
+    if C > threshold:
         E = (C - c_min) / (c_max - c_min + 1e-12)
         E_limited = np.tanh(E * 2.0) * 0.5 + 0.5
         return c_min + E_limited * (c_max - c_min)
+    else:
+        return np.clip(C, c_min, c_max)
 
 
 # =============================================================================
