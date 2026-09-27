@@ -44,8 +44,8 @@ GLOBAL_SQ2 = np.sqrt(2.0)
 GLOBAL_C_MIN = 1.0 / (GLOBAL_PHI ** 10)
 GLOBAL_C_MAX = 1.0 - 1.0 / (GLOBAL_PHI ** 20)
 
-C_FFS = 0.87
-S_cycle = 0.12
+C_FFS = 1
+S_cycle = 0.00000001
 EPSILON_FFS = 0.01
 
 K_HYPER = 30.0
