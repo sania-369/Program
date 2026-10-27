@@ -458,4 +458,4 @@ def demo_ffs_calibration(n_steps=100_000, log_every=10_000):
     print(f"   m_n     : {n_err:.6f}%")
 
 if __name__ == "__main__":
-    demo_ffs_calibration(n_steps=100_000, log_every=10_000)
+    demo_ffs_calibration(n_steps=10_000, log_every=1_000)
